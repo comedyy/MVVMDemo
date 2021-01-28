@@ -4,8 +4,4 @@ using UnityEngine;
 
 public class MyView : BaseView<MyViewModel>
 {
-    private void Update()
-    {
-        ViewModel.Count++;
-    }
 }

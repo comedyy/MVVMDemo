@@ -51,4 +51,10 @@ public class MyViewModel : BaseViewModel
             }
         }
     }
+
+    public void AddCount() 
+    {
+        Count++;
+        Total = count * price;
+    }
 }
