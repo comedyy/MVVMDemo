@@ -14,6 +14,7 @@ public class MyViewModel : BaseViewModel
     int count;
     int price;
     int total;
+    bool shoppingBag;
 
     public int Count { 
         get { return count; }
@@ -52,9 +53,39 @@ public class MyViewModel : BaseViewModel
         }
     }
 
+    public bool ShoppingBag
+    {
+        get { return shoppingBag; }
+        set
+        {
+            if (shoppingBag != value)
+            {
+                shoppingBag = value;
+                OnPropertyChange(nameof(ShoppingBag));
+            }
+        }
+    }
+
     public void AddCount() 
     {
         Count++;
-        Total = count * price;
+        RecalcTotal();
+    }
+
+    public void SetShoppingBag(bool isSet) 
+    {
+        ShoppingBag = isSet;
+        RecalcTotal();
+    }
+
+    void RecalcTotal() 
+    {
+        int value = count * price;
+        if (shoppingBag)
+        {
+            value++;
+        }
+
+        Total = value;
     }
 }

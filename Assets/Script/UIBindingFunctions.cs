@@ -9,4 +9,9 @@ public static class UIBindingFunctions
     {
         text.text = value.ToString();
     }
+
+    public static void SetToggle(Toggle toggle, bool value) 
+    {
+        toggle.isOn = value;
+    }
 }

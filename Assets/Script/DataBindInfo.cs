@@ -10,7 +10,7 @@ internal class DataBindInfo
 }
 
 [Serializable]
-internal class EventBindInfo
+public class EventBindInfo
 {
     public Component component;
     public string className;

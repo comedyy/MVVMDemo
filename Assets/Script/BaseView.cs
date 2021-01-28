@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BaseView<T> : MonoBehaviour where T : BaseViewModel
 {
@@ -44,7 +45,7 @@ public class BaseView<T> : MonoBehaviour where T : BaseViewModel
             _event_connections = new EventBindingConnection[eventBindConfigs.Length];
             for (int i = 0; i < _event_connections.Length; i++)
             {
-                _event_connections[i] = new EventBindingConnection(ViewModel, eventBindConfigs[i]);
+                _event_connections[i] = GetConnectionByComponent(eventBindConfigs[i]);
                 _event_connections[i].Bind();
             }
         }
@@ -61,5 +62,19 @@ public class BaseView<T> : MonoBehaviour where T : BaseViewModel
         {
             _event_connections[i].UnBind();
         }
+    }
+
+    EventBindingConnection GetConnectionByComponent(EventBindInfo config) 
+    {
+        if (config.component is Button)
+        {
+            return new ButtonEventBindingConnection(ViewModel, config);
+        }
+        else if (config.component is Toggle)
+        {
+            return new ToggleEventBindingConnection(ViewModel, config);
+        }
+
+        return null;
     }
 }

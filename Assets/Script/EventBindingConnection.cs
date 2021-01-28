@@ -1,39 +1,41 @@
 ﻿using System;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
-internal class EventBindingConnection
+public abstract class EventBindingConnection<T> : EventBindingConnection where T : Component
+{
+    protected T Component;
+
+    public EventBindingConnection(BaseViewModel viewModel, EventBindInfo eventBindInfo) : base (viewModel, eventBindInfo)
+    {
+        Component = (T)eventBindInfo.component;
+    }
+}
+
+public abstract class EventBindingConnection
 {
     private EventBindInfo eventBindInfo;
-    private BaseViewModel viewModel;
+    protected BaseViewModel viewModel;
 
-    MethodInfo _invokeMethod;
+    protected MemberInfo _invokeMethod;
 
-    public EventBindingConnection(BaseViewModel viewModel, EventBindInfo dataBindInfo)
+    public EventBindingConnection(BaseViewModel viewModel, EventBindInfo eventBindInfo)
     {
-        this.eventBindInfo = dataBindInfo;
+        this.eventBindInfo = eventBindInfo;
         this.viewModel = viewModel;
 
-        _invokeMethod = viewModel.GetType().GetMethod(dataBindInfo.invokeFunctionName, BindingFlags.Public | BindingFlags.Instance);
-        if (_invokeMethod == null)
+        MemberInfo[] infos = viewModel.GetType().GetMember(eventBindInfo.invokeFunctionName, BindingFlags.Public | BindingFlags.Instance);
+        if (infos == null || infos.Length == 0)
         {
-            Debug.LogErrorFormat("get invokeMethod null {0}", dataBindInfo.invokeFunctionName);
+            Debug.LogErrorFormat("get invokeMethod null {0}", eventBindInfo.invokeFunctionName);
+            return;
         }
+
+        _invokeMethod = infos[0];
     }
 
-    private void OnEvent()
-    {
-        _invokeMethod.Invoke(viewModel, null);
-    }
-
-    internal void Bind()
-    {
-        ((Button)eventBindInfo.component).onClick.AddListener(OnEvent);
-    }
-
-    internal void UnBind()
-    {
-        ((Button)eventBindInfo.component).onClick.RemoveListener(OnEvent);
-    }
+    public abstract void Bind();
+    public abstract void UnBind();
 }
