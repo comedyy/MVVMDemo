@@ -8,13 +8,17 @@ public class MyViewModel : BaseViewModel
     {
         count = 1;
         price = 10;
-        total = count * price;
+        shoppingBag = false;
+        discount = 100;
+
+        RecalcTotal();
     }
 
     int count;
     int price;
     int total;
     bool shoppingBag;
+    float discount;
 
     public int Count { 
         get { return count; }
@@ -66,6 +70,21 @@ public class MyViewModel : BaseViewModel
         }
     }
 
+    public float Discount
+    {
+        get { return discount; }
+        set
+        {
+            if (discount != value)
+            {
+                discount = value;
+
+                RecalcTotal();
+                OnPropertyChange(nameof(Discount));
+            }
+        }
+    }
+
     public void AddCount() 
     {
         Count++;
@@ -86,6 +105,6 @@ public class MyViewModel : BaseViewModel
             value++;
         }
 
-        Total = value;
+        Total = (int)(value * discount / 100f);
     }
 }

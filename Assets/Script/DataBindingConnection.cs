@@ -26,6 +26,11 @@ internal class DataBindingConnection
         {
             Debug.LogErrorFormat("get invokeMethod null {0}", dataBindInfo.invokeFunctionName);
         }
+
+        if (_invokeMethod.IsGenericMethod)
+        {
+            _invokeMethod = _invokeMethod.MakeGenericMethod(new Type[] { _getProperty.PropertyType });
+        }
     }
 
     void OnChange(string changedProperty) 

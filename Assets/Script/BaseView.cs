@@ -74,6 +74,10 @@ public class BaseView<T> : MonoBehaviour where T : BaseViewModel
         {
             return new ToggleEventBindingConnection(ViewModel, config);
         }
+        else if (config.component is Slider)
+        {
+            return new SliderEventBindingConnection(ViewModel, config);
+        }
 
         return null;
     }
