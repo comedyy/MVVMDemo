@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [Serializable]
-internal class DataBindInfo
+public class DataBindInfo
 {
     public Component component;
     public string invokeFunctionName;

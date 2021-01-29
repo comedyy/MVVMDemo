@@ -7,8 +7,8 @@ using UnityEngine.UI;
 public class BaseView<T> : MonoBehaviour where T : BaseViewModel
 {
     public T ViewModel { get; protected set; }
-    [SerializeField] DataBindInfo[] dataBindConfigs;
-    [SerializeField] EventBindInfo[] eventBindConfigs;
+    /*[SerializeField]*/ public DataBindInfo[] dataBindConfigs;
+    /*[SerializeField]*/ public EventBindInfo[] eventBindConfigs;
 
     DataBindingConnection[] _data_connections;
     EventBindingConnection[] _event_connections;
