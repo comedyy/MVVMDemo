@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public static class UIBindingFunctions
 {
-    public static void SetText<T>(Text text, T value)
+    public static void SetText<T>(Text text, T value) where T : struct
     {
         if (text == null)
         {
@@ -14,13 +14,18 @@ public static class UIBindingFunctions
             return;
         }
 
-        if (value == null)
+        text.text = value.ToString();
+    }
+
+    public static void SetTextString(Text text, string value) 
+    {
+        if (text == null)
         {
-            Debug.LogError("SetText Error, Value Null " + text.ToString());
+            Debug.LogError("SetText Error, Text Null");
             return;
         }
 
-        text.text = value.ToString();
+        text.text = value;
     }
 
     public static void SetToggle(Toggle toggle, bool value) 

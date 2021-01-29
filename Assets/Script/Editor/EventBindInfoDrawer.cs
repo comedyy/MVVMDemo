@@ -6,19 +6,19 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(DataBindInfo))]
-public class DataBindInfoDrawer : PropertyDrawer
+[CustomPropertyDrawer(typeof(EventBindInfo))]
+public class EventBindInfoDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        DataBindInfo bindingInfo = property.GetSerializedValue<DataBindInfo>();
+        EventBindInfo bindingInfo = property.GetSerializedValue<EventBindInfo>();
         string title = bindingInfo.component == null ? "NULL" : bindingInfo.component.ToString();
         GUIContent titleContent = new GUIContent(title);
         if (property.isExpanded)
         {
-            property.isExpanded = EditorGUI.Foldout(new Rect(position.position - new Vector2(0, 30), position.size), property.isExpanded, titleContent, false);
+            property.isExpanded = EditorGUI.Foldout(new Rect(position.position - new Vector2(0, 20), position.size), property.isExpanded, titleContent, false);
         }
         else 
         {
@@ -28,32 +28,20 @@ public class DataBindInfoDrawer : PropertyDrawer
         {
             var amountRect = new Rect(position.x, position.y + 20, position.width, 20);
             var unitRect = new Rect(position.x, position.y + 40, position.width, 20);
-            var nameRect = new Rect(position.x, position.y + 60, position.width, 20);
 
             EditorGUI.PropertyField(amountRect, property.FindPropertyRelative("component"), GUIContent.none);
-
-            SerializedProperty methodMethod = property.FindPropertyRelative("invokeFunctionName");
-            List<string> methodList = EditorPropertyCache.GetComponentOpts(bindingInfo.component.GetType());
-
-            int index = 0;
-            if (methodList.Count > 0)
-            {
-                index = methodList.IndexOf(methodMethod.stringValue);
-                index = EditorGUI.Popup(unitRect, index, methodList.ToArray());
-                methodMethod.stringValue = methodList[index];
-            }
 
             SerializedObject o = property.serializedObject;
             Type tO = o.targetObject.GetType();
             PropertyInfo viewModelProperty = tO.GetProperty("ViewModel", BindingFlags.Public | BindingFlags.Instance);
             string typeModel = viewModelProperty.PropertyType.Name;
-            SerializedProperty propertyProperty = property.FindPropertyRelative("propertyName");
-            List<string> propertyList = EditorPropertyCache.GetPropertys(typeModel, bindingInfo.component.GetType(), methodMethod.stringValue);
+            SerializedProperty propertyProperty = property.FindPropertyRelative("invokeFunctionName");
+            List<string> propertyList = EditorPropertyCache.GetMethodAndPropertys(typeModel, bindingInfo.component.GetType());
 
             if (propertyList.Count > 0)
             {
-                index = propertyList.IndexOf(propertyProperty.stringValue);
-                index = EditorGUI.Popup(nameRect, index, propertyList.ToArray());
+                int index = propertyList.IndexOf(propertyProperty.stringValue);
+                index = EditorGUI.Popup(unitRect, index, propertyList.ToArray());
                 if (index >= 0)
                 {
                     propertyProperty.stringValue = propertyList[index];
@@ -68,7 +56,7 @@ public class DataBindInfoDrawer : PropertyDrawer
     {
         if (property.isExpanded)
         {
-            return 80;
+            return 60;
         }
 
         return 20;

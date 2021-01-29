@@ -1,16 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 
 public static class EditorPropertyCache
 {
-    static Dictionary<Type, List<string>> _dicComponentFuncs;
-    static Dictionary<string, List<string>> _dicViewModelPropertys;
-    static Dictionary<string, List<string>> _dicViewModelMethodsAndPropertys;
+    static Dictionary<Type, List<MethodInfo>> _dicComponentFuncs;
+    static Dictionary<string, List<PropertyInfo>> _dicViewModelPropertys;
+    static Dictionary<string, List<MethodInfo>> _dicViewModelMethods;
 
-    static void Init() 
+    static EditorPropertyCache() 
     {
         InitComponentFuncs();
         InitViewModelPropertys();
@@ -23,8 +25,8 @@ public static class EditorPropertyCache
             return;
         }
 
-        _dicViewModelPropertys = new Dictionary<string, List<string>>();
-        _dicViewModelMethodsAndPropertys = new Dictionary<string, List<string>>();
+        _dicViewModelPropertys = new Dictionary<string, List<PropertyInfo>>();
+        _dicViewModelMethods = new Dictionary<string, List<MethodInfo>>();
 
         Type[] types = typeof(BaseViewModel).Assembly.GetTypes();
         foreach (var type in types)
@@ -35,30 +37,28 @@ public static class EditorPropertyCache
             }
 
             string name = type.Name;
-            if (!_dicViewModelMethodsAndPropertys.TryGetValue(name, out List<string> lstMetheds))
+            if (!_dicViewModelMethods.TryGetValue(name, out List<MethodInfo> lstMetheds))
             {
-                lstMetheds = new List<string>();
-                _dicViewModelMethodsAndPropertys.Add(name, lstMetheds);
+                lstMetheds = new List<MethodInfo>();
+                _dicViewModelMethods.Add(name, lstMetheds);
             }
 
-            if (!_dicViewModelPropertys.TryGetValue(name, out List<string> lstPropertys))
+            if (!_dicViewModelPropertys.TryGetValue(name, out List<PropertyInfo> lstPropertys))
             {
-                lstPropertys = new List<string>();
+                lstPropertys = new List<PropertyInfo>();
                 _dicViewModelPropertys.Add(name, lstPropertys);
             }
 
-            MemberInfo[] members = type.GetMembers(BindingFlags.Public | BindingFlags.Instance);
+            MethodInfo[] members = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m=>!m.IsSpecialName).ToArray();
             foreach (var member in members)
             {
-                if (member is PropertyInfo)
-                {
-                    lstPropertys.Add(member.Name);
-                    lstMetheds.Add(member.Name);
-                }
-                else if (member is MethodInfo)
-                {
-                    lstMetheds.Add(member.Name);
-                }
+                lstMetheds.Add(member);
+            }
+
+            PropertyInfo[] propertys = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => !m.IsSpecialName).ToArray();
+            foreach (var property in propertys)
+            {
+                lstPropertys.Add(property);
             }
         }
     }
@@ -70,7 +70,7 @@ public static class EditorPropertyCache
             return;
         }
 
-        _dicComponentFuncs = new Dictionary<Type, List<string>>();
+        _dicComponentFuncs = new Dictionary<Type, List<MethodInfo>>();
 
         MethodInfo[] infos = typeof(UIBindingFunctions).GetMethods(BindingFlags.Public | BindingFlags.Static);
         foreach (var info in infos)
@@ -82,45 +82,139 @@ public static class EditorPropertyCache
             }
 
             Type t = ps[0].ParameterType;
-            if (!_dicComponentFuncs.TryGetValue(t, out List<string> list))
+            if (!_dicComponentFuncs.TryGetValue(t, out List<MethodInfo> list))
             {
-                list = new List<string>();
+                list = new List<MethodInfo>();
                 _dicComponentFuncs.Add(t, list);
             }
 
-            list.Add(info.Name);
+            list.Add(info);
         }
     }
 
     public static List<string> GetComponentOpts(Type type)
     {
-        Init();
-
         List<string> lstFunc = new List<string>();
         foreach (var key in _dicComponentFuncs.Keys)
         {
             if (key.IsAssignableFrom(type))
             {
-                lstFunc.AddRange(_dicComponentFuncs[key]); ;
+                lstFunc.AddRange(_dicComponentFuncs[key].Select(m=>m.Name)); ;
             }
         }
 
         return lstFunc;
     }
 
-    public static List<string> GetPropertys(string type) 
+    public static List<MethodInfo> GetMethodInfo(Type compType, string method) 
     {
-        Init();
-        if (_dicViewModelPropertys.TryGetValue(type, out List<string> list))
+        List<MethodInfo> lstMethod = new List<MethodInfo>();
+        foreach (var key in _dicComponentFuncs.Keys)
         {
-            return list;
+            if (key.IsAssignableFrom(compType))
+            {
+                foreach (var item in _dicComponentFuncs[key])
+                {
+                    if (item.Name == method)
+                    {
+                        lstMethod.Add(item);
+                    }
+                }
+            }
         }
 
-        return new List<string>();
+        return lstMethod;
     }
 
-    //public static List<string> GetMethodAndPropertys(string type) 
-    //{
-    
-    //}
+    public static List<string> GetPropertys(string type, Type componentType, string methodName) 
+    {
+        List<MethodInfo> methodInfos = GetMethodInfo(componentType, methodName);
+
+        List<string> lstProperty = new List<string>();
+        if (!_dicViewModelPropertys.TryGetValue(type, out List<PropertyInfo> lstPropertys)) 
+        {
+            return new List<string>();
+        }
+  
+        foreach (var property in lstPropertys)
+        {
+            foreach (var methodInfo in methodInfos)
+            {
+                if (methodInfo.IsGenericMethod)
+                {
+                    try
+                    {  // TODO:选择更好的方式
+                        MethodInfo makeMethod = methodInfo.MakeGenericMethod(new Type[] { property.PropertyType });
+                        if (makeMethod != null)
+                        {
+                            lstProperty.Add(property.Name);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                else
+                {
+                    Type argType = methodInfo.GetParameters()[1].ParameterType;
+                    if (argType.IsAssignableFrom(property.PropertyType))
+                    {
+                        lstProperty.Add(property.Name);
+                    }
+                }
+            }
+        }
+
+        return lstProperty;
+    }
+
+    public static List<string> GetMethodAndPropertys(string viewModelType, Type componentType)
+    {
+        if (!_dicViewModelMethods.TryGetValue(viewModelType, out List<MethodInfo> lstMethods))
+        {
+            return new List<string>();
+        }
+
+        List<string> lstRet = new List<string>();
+        Type argType = GetArgumentByComponentEvent(componentType);
+        foreach (var item in lstMethods)
+        {
+            var ts = item.GetParameters();
+            if (ts.Length == 0 && argType == typeof(void))
+            {
+                lstRet.Add(item.Name);
+            }
+            else if (ts.Length == 1 && ts[0].ParameterType.IsAssignableFrom(argType))
+            {
+                lstRet.Add(item.Name);
+            }
+        }
+
+        if (_dicViewModelPropertys.TryGetValue(viewModelType, out List<PropertyInfo> lstPropertys))
+        {
+            foreach (var item in lstPropertys)
+            {
+                if (item.PropertyType.IsAssignableFrom(argType))
+                {
+                    lstRet.Add(item.Name);
+                }
+            }
+        }
+
+        return lstRet;
+    }
+
+    private static Type GetArgumentByComponentEvent(Type componentType)
+    {
+        if (componentType == typeof(Slider))
+        {
+            return typeof(float);
+        }
+        else if (componentType == typeof(Toggle))
+        {
+            return typeof(bool);
+        }
+        
+        return typeof(void);
+    }
 }
