@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MyView : BaseView<MyViewModel>
+public class FruitListViewItem : BaseCollectionViewItem<BuyInfo>
 {
+    
 }

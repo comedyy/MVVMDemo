@@ -6,17 +6,13 @@ using UnityEngine.UI;
 
 public class BaseView<T> : MonoBehaviour where T : BaseViewModel
 {
-    public T ViewModel { get; private set; }
+    public T ViewModel { get; protected set; }
     [SerializeField] DataBindInfo[] dataBindConfigs;
     [SerializeField] EventBindInfo[] eventBindConfigs;
 
     DataBindingConnection[] _data_connections;
     EventBindingConnection[] _event_connections;
 
-    private void Awake()
-    {
-        ViewModel = (T)Activator.CreateInstance(typeof(T));
-    }
 
     private void OnEnable()
     {
